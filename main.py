@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
+import  numpy as np
 
 
 imdb = keras.datasets.imdb
@@ -38,7 +39,7 @@ def decode_review(text):
 # def decode_review(text):
 # 	return " ".join([reverse_word_index.get(i, "?") for i in text])
 
-print(decode_review( test_data[0]))
+# print(decode_review( test_data[0]))
 
 
 
@@ -69,7 +70,48 @@ test_data = keras.preprocessing.sequence.pad_sequences(test_data, value=word_ind
 #
 
 
-print(decode_review(test_data[0]))
+
 
 #create model
+
 model = keras.Sequential()
+
+# A word embedding layer will attempt to
+# determine the meaning of each word in the sentence by mapping each word to a position in vector space.
+#creates a 16 dimensional position vector
+model.add(keras.layers.Embedding(88000, 16))
+#  Creates a global average of the 16d vector
+model.add(keras.layers.GlobalAveragePooling1D())
+
+model.add(keras.layers.Dense(16, activation="relu"))
+model.add(keras.layers.Dense(1, activation="sigmoid"))
+
+model.summary()
+
+#create testing and validation data
+x_val = train_data[:10000]
+x_train = train_data[10000:]
+
+y_val = train_labels[:10000]
+y_train = train_labels[10000:]
+
+model.compile(optimizer='adam' , loss='binary_crossentropy' , metrics = ['accuracy'])
+
+#TRAIN THE MODEL ON part of training data and validate on the rest
+fitModel = model.fit(x_train, y_train, epochs=40, batch_size=512, validation_data=(x_val, y_val), verbose=1)
+
+#then check the value for the test_labels
+results = model.evaluate(test_data, test_labels)
+print(results)
+
+#save model
+model.save("model.h5")
+
+
+
+# #check for a test_review
+test_review = test_data[0]
+prediction = model.predict(np.array([test_review]))
+print("Review: " + decode_review(test_review))
+print("Prediction: " + str(prediction[0]))
+print("Actual: " + str(test_labels[0]))
